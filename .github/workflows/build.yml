@@ -24,7 +24,7 @@ jobs:
       run: |
         mkdir ~/workspace
         cd ~/workspace
-        git clone https://gitlab.com/sdm845-mainline/linux.git -b sdm845/5.18-release
+        git clone https://gitlab.com/sdm845-mainline/linux.git -b sdm845/5.18-release --depth=1
         
     - name: build
       run: |
