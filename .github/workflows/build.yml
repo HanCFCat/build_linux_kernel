@@ -1,0 +1,44 @@
+name: Build edk2
+
+on:
+  watch:
+    types: [started]
+    
+jobs:
+  build:
+    if: github.event.repository.owner.id == github.event.sender.id
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Check Out
+      uses: actions/checkout@main
+      
+    - name: Update & Install
+      run: |
+        sudo apt update
+        sudo apt upgrade
+        sudo apt install build-essential openssl pkg-config libssl-dev libncurses5-dev pkg-config minizip libelf-dev flex bison  libc6-dev libidn11-dev rsync bc liblz4-tool  
+        sudo apt install gcc-aarch64-linux-gnu dpkg-dev dpkg git
+        
+    - name: Clone
+      run: |
+        mkdir ~/workspace
+        cd ~/workspace
+        git clone https://gitlab.com/sdm845-mainline/linux.git -b sdm845/5.18-release
+        
+    - name: build
+      run: |
+        cd ~/workspace/linux
+        make ARCH=arm64 defconfig sdm845.config
+        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+        make -j$(nproc) ARCH=arm64 KBUILD_DEBARCH=arm64 KDEB_CHANGELOG_DIST=mobile CROSS_COMPILE=aarch64-linux-gnu- deb-pkg
+
+    - name: Upload File to Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ~/workspace/linux/*.deb
+        name: edk2
+        tag_name: ${{ github.run_id }}
+        body: Linux Kernel
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
